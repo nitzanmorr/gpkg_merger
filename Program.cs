@@ -5,6 +5,7 @@ if (Environment.GetEnvironmentVariable("GPKG_A") == null || Environment.GetEnvir
 {
     throw new Exception("Must set GPKG_A and GPKG_B");
 }
+
 string firstGpkgPath = Environment.GetEnvironmentVariable("GPKG_A");
 string secondGpkgPath = Environment.GetEnvironmentVariable("GPKG_B");
 SQLiteConnection sqlite_connA = CreateConnection(firstGpkgPath);
