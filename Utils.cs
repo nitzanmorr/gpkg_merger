@@ -1,22 +1,22 @@
 using System.Data.SQLite;
-using System.Security.Cryptography.X509Certificates;
 
 class Utils
 {
-    public static SQLiteConnection CreateConnection(String sqlitePath)
+    public static SQLiteConnection EstablishConnection(String sqlitePath)
     // create a connection to a sqlite db
     {
         SQLiteConnection sqlite_conn = new($"Data Source={sqlitePath}");
         try
         {
             sqlite_conn.Open();
+            return sqlite_conn;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            throw new Exception("Cannot open the sqlite connection", e);
         }
-        return sqlite_conn;
     }
+
     public static void MergeData(SQLiteConnection connA, SQLiteConnection connB)
     {
         SQLiteDataReader sqlite_datareader;
@@ -34,7 +34,9 @@ class Utils
         string tableNameA = sqlite_datareader.GetString(0);
 
         SQLiteCommand query = connA.CreateCommand();
-        query.CommandText = $@"ATTACH DATABASE '{connB.FileName}' AS gpkgB;
+        string secondGpkgAlias = "gpkgB";
+        query.CommandText =
+        $@"ATTACH DATABASE '{connB.FileName}' AS {secondGpkgAlias};
         INSERT OR IGNORE INTO {tableNameA} 
         SELECT NULL, zoom_level, tile_column, tile_row, tile_data
         FROM gpkgB.{tableNameB};";
@@ -44,37 +46,34 @@ class Utils
         try
         {
             query.ExecuteNonQuery();
+            SetNewExtent(connA, secondGpkgAlias);
+            Console.WriteLine("gpkg's merged successfully");
         }
-        catch (Exception e)
+        catch
         {
-            throw new Exception(e.Message);
+            throw;
         }
 
-        SetNewExtent(connA);
 
-        Console.WriteLine("gpkg's merged successfully");
-
-        connA.Close();
-        connB.Close();
     }
 
-    private static void SetNewExtent(SQLiteConnection connA)
+    private static void SetNewExtent(SQLiteConnection connA, string gpkgBAlias)
     {
-        SQLiteCommand getExtents = new SQLiteCommand(
-            @$"UPDATE gpkg_contents 
-            SET min_x = MIN(min_x, (SELECT min_x FROM gpkgB.gpkg_contents)),
-                min_y = MIN(min_y, (SELECT min_y FROM gpkgB.gpkg_contents)),
-                max_x = MAX(max_x, (SELECT max_x FROM gpkgB.gpkg_contents)),
-                max_y = MAX(max_y, (SELECT max_y FROM gpkgB.gpkg_contents))"
+        SQLiteCommand setMergedExtentsQuery = new SQLiteCommand(
+            @$"UPDATE gpkg_contents
+            SET min_x = MIN(min_x, (SELECT min_x FROM {gpkgBAlias}.gpkg_contents)),
+                min_y = MIN(min_y, (SELECT min_y FROM {gpkgBAlias}.gpkg_contents)),
+                max_x = MAX(max_x, (SELECT max_x FROM {gpkgBAlias}.gpkg_contents)),
+                max_y = MAX(max_y, (SELECT max_y FROM {gpkgBAlias}.gpkg_contents))"
         , connA);
 
         try
         {
-            getExtents.ExecuteNonQuery();
+            setMergedExtentsQuery.ExecuteNonQuery();
         }
-        catch (Exception e)
+        catch
         {
-            throw new Exception(e.Message);
+            throw;
         }
     }
 }
