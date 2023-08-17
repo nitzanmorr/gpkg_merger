@@ -1,14 +1,21 @@
 ﻿using System.Data.SQLite;
 using static Utils;
 
-if (Environment.GetEnvironmentVariable("GPKG_A") == null || Environment.GetEnvironmentVariable("GPKG_B") == null)
+string firstGpkgPath = Environment.GetEnvironmentVariable("GPKG_A") ?? throw new NullReferenceException("GPKG_A cannot be null");
+string secondGpkgPath = Environment.GetEnvironmentVariable("GPKG_B") ?? throw new NullReferenceException("GPKG_B cannot be null");
+SQLiteConnection sqlite_connA = EstablishConnection(firstGpkgPath);
+SQLiteConnection sqlite_connB = EstablishConnection(secondGpkgPath);
+
+try
 {
-    throw new Exception("Must set GPKG_A and GPKG_B");
+    MergeData(sqlite_connA, sqlite_connB);
 }
-
-string firstGpkgPath = Environment.GetEnvironmentVariable("GPKG_A");
-string secondGpkgPath = Environment.GetEnvironmentVariable("GPKG_B");
-SQLiteConnection sqlite_connA = CreateConnection(firstGpkgPath);
-SQLiteConnection sqlite_connB = CreateConnection(secondGpkgPath);
-
-MergeData(sqlite_connA, sqlite_connB);
+catch (Exception e)
+{
+    throw new Exception("Merge failed", e);
+}
+finally
+{
+    sqlite_connA.Close();
+    sqlite_connB.Close();
+}
