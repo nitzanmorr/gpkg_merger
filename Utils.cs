@@ -5,11 +5,11 @@ class Utils
     public static SQLiteConnection EstablishConnection(String sqlitePath)
     // create a connection to a sqlite db
     {
-        SQLiteConnection sqlite_conn = new($"Data Source={sqlitePath}");
+        SQLiteConnection sqliteConn = new($"Data Source={sqlitePath}");
         try
         {
-            sqlite_conn.Open();
-            return sqlite_conn;
+            sqliteConn.Open();
+            return sqliteConn;
         }
         catch (Exception e)
         {
@@ -19,29 +19,27 @@ class Utils
 
     public static void MergeData(SQLiteConnection connA, SQLiteConnection connB)
     {
-        SQLiteDataReader sqlite_datareader;
+        SQLiteDataReader sqliteDatareader;
 
         SQLiteCommand getBContent = connB.CreateCommand();
         getBContent.CommandText = "SELECT table_name FROM gpkg_contents LIMIT 1";
-        sqlite_datareader = getBContent.ExecuteReader();
-        sqlite_datareader.Read();
-        string tableNameB = sqlite_datareader.GetString(0);
+        sqliteDatareader = getBContent.ExecuteReader();
+        sqliteDatareader.Read();
+        string tableNameB = sqliteDatareader.GetString(Consts.FirstGpkgColumn);
 
         SQLiteCommand getAContent = connA.CreateCommand();
         getAContent.CommandText = "SELECT table_name FROM gpkg_contents LIMIT 1";
-        sqlite_datareader = getAContent.ExecuteReader();
-        sqlite_datareader.Read();
-        string tableNameA = sqlite_datareader.GetString(0);
+        sqliteDatareader = getAContent.ExecuteReader();
+        sqliteDatareader.Read();
+        string tableNameA = sqliteDatareader.GetString(Consts.FirstGpkgColumn);
 
         SQLiteCommand query = connA.CreateCommand();
         string secondGpkgAlias = "gpkgB";
         query.CommandText =
         $@"ATTACH DATABASE '{connB.FileName}' AS {secondGpkgAlias};
-        INSERT OR IGNORE INTO {tableNameA} 
-        SELECT NULL, zoom_level, tile_column, tile_row, tile_data
+        INSERT OR IGNORE INTO {tableNameA} (zoom_level, tile_column, tile_row, tile_data)
+        SELECT zoom_level, tile_column, tile_row, tile_data
         FROM gpkgB.{tableNameB};";
-
-        Console.WriteLine(query.CommandText);
 
         try
         {

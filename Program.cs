@@ -3,12 +3,12 @@ using static Utils;
 
 string firstGpkgPath = Environment.GetEnvironmentVariable("GPKG_A") ?? throw new NullReferenceException("GPKG_A cannot be null");
 string secondGpkgPath = Environment.GetEnvironmentVariable("GPKG_B") ?? throw new NullReferenceException("GPKG_B cannot be null");
-SQLiteConnection sqlite_connA = EstablishConnection(firstGpkgPath);
-SQLiteConnection sqlite_connB = EstablishConnection(secondGpkgPath);
+SQLiteConnection sqliteConnA = EstablishConnection(firstGpkgPath);
+SQLiteConnection sqliteConnB = EstablishConnection(secondGpkgPath);
 
 try
 {
-    MergeData(sqlite_connA, sqlite_connB);
+    MergeData(sqliteConnA, sqliteConnB);
 }
 catch (Exception e)
 {
@@ -16,6 +16,6 @@ catch (Exception e)
 }
 finally
 {
-    sqlite_connA.Close();
-    sqlite_connB.Close();
+    sqliteConnA.Close();
+    sqliteConnB.Close();
 }
